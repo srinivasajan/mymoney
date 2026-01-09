@@ -1,0 +1,168 @@
+.header {
+    height: var(--header-height);
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-xl);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.titleSection {
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+    margin-top: 2px;
+}
+
+.right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.netWorthBadge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: var(--color-accent-gold-muted);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(212, 168, 83, 0.3);
+}
+
+.netWorthLabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-accent-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.netWorthValue {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent-gold);
+    font-family: var(--font-mono);
+}
+
+.divider {
+    width: 1px;
+    height: 32px;
+    background: var(--color-border);
+}
+
+.datetime {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.date {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.time {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-bg-tertiary);
+    border: 2px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+}
+
+.avatar:hover {
+    border-color: var(--color-accent-primary);
+}
+
+/* Theme Toggle */
+.themeToggle {
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.themeToggle:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-border-hover);
+}
+
+/* Greeting */
+.greeting {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-xs);
+}
+
+.greetingText {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.userName {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .header {
+        padding: 0 var(--spacing-md);
+    }
+
+    .netWorthBadge {
+        display: none;
+    }
+
+    .datetime {
+        display: none;
+    }
+
+    .greeting {
+        display: none;
+    }
+}

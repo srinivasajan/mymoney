@@ -1,0 +1,163 @@
+/* FinancialGauge Component Styles */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.gauge {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+}
+
+.valueArc {
+    transition: stroke-dashoffset 0.3s ease;
+}
+
+.valueContainer {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    margin-top: calc(var(--spacing-md) * -1);
+}
+
+.value {
+    font-family: var(--font-mono);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+}
+
+.unit {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.labelContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+}
+
+.label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+}
+
+.status {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sublabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Size Variants */
+.sm .valueContainer {
+    margin-top: calc(var(--spacing-sm) * -1);
+}
+
+.sm .label {
+    font-size: var(--font-size-xs);
+}
+
+.lg .label {
+    font-size: var(--font-size-base);
+}
+
+/* FinancialHealthDashboard Styles */
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.dashboardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dashboardTitle {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.overallSection {
+    display: flex;
+    justify-content: center;
+    padding: var(--spacing-lg) 0;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.indicatorsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.indicatorCard {
+    display: grid;
+    grid-template-columns: 1fr 100px 40px;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.indicatorInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.indicatorLabel {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.indicatorSublabel {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.indicatorBar {
+    width: 100%;
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.indicatorFill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease-out;
+}
+
+.indicatorValue {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .indicatorCard {
+        grid-template-columns: 1fr 80px 36px;
+    }
+}
