@@ -108,6 +108,14 @@ const Icons = {
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
         </svg>
     ),
+    moat: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 21h18" />
+            <path d="M5 21V7l3-3 3 3 2-2 2 2 3-3 3 3v14" />
+            <path d="M5 11h14" />
+            <path d="M9 21v-4h6v4" />
+        </svg>
+    ),
     settings: (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -137,6 +145,7 @@ const portfolioItems: NavItem[] = [
 ];
 
 const toolsItems: NavItem[] = [
+    { label: 'Trade', href: '/trade', icon: 'invest' },
     { label: 'Invest', href: '/invest', icon: 'invest' },
     { label: 'Retirement', href: '/retirement', icon: 'retirement' },
     { label: 'Debt Planner', href: '/debt-planner', icon: 'debt' },
@@ -146,6 +155,7 @@ const toolsItems: NavItem[] = [
 ];
 
 const insightsItems: NavItem[] = [
+    { label: 'The Moat', href: '/moat', icon: 'moat' },
     { label: 'Analytics', href: '/analytics', icon: 'analytics' },
     { label: 'Health Score', href: '/health-score', icon: 'health' },
     { label: 'Tax Planner', href: '/tax', icon: 'tax' },
@@ -202,13 +212,13 @@ export default function Sidebar() {
 
     return (
         <aside className={styles.sidebar}>
-            <div className={styles.logo}>
+            <Link href="/" className={styles.logo}>
                 <span className={styles.logoIcon}>☽</span>
                 <div className={styles.logoTextWrapper}>
                     <span className={styles.logoText}>Moonlight</span>
                     <span className={styles.logoSubtext}>Capital</span>
                 </div>
-            </div>
+            </Link>
 
             <nav className={styles.nav}>
                 {renderNavSection('Portfolio', portfolioItems)}

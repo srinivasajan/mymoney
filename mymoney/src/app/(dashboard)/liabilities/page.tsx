@@ -1,23 +1,43 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import styles from '../assets/page.module.css';
 import {
-    getLiabilities,
-    createLiability,
-    updateLiability,
-    deleteLiability
-} from '@/lib/storage';
-import {
-    formatCurrency,
-    formatDate,
-    LIABILITY_CATEGORY_LABELS
-} from '@/lib/utils';
-import type { Liability, LiabilityCategory, LiabilityFormData } from '@/lib/types';
+    fetchLiabilities,
+    createLiabilityAPI,
+    updateLiabilityAPI,
+    deleteLiabilityAPI
+} from '@/lib/api';
+import { formatCurrency } from '@/lib/utils';
 
-const LIABILITY_CATEGORIES: { value: LiabilityCategory; label: string }[] = [
+interface Liability {
+    _id: string;
+    name: string;
+    type: string;
+    principal: number;
+    currentBalance: number;
+    interestRate: number;
+    emi?: number;
+    institution?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface LiabilityFormData {
+    name: string;
+    type: string;
+    principal: number;
+    currentBalance: number;
+    interestRate: number;
+    emi: number;
+    institution: string;
+    notes: string;
+}
+
+const LIABILITY_CATEGORIES: { value: string; label: string }[] = [
     { value: 'home_loan', label: 'Home Loan' },
     { value: 'car_loan', label: 'Car Loan' },
     { value: 'personal_loan', label: 'Personal Loan' },
@@ -36,15 +56,13 @@ const calculateEMI = (principal: number, annualRate: number, tenureMonths: numbe
 };
 
 const INITIAL_FORM: LiabilityFormData = {
-    category: 'personal_loan',
+    type: 'personal_loan',
     name: '',
+    principal: 0,
+    currentBalance: 0,
+    interestRate: 0,
+    emi: 0,
     institution: '',
-    principal_amount: 0,
-    outstanding_amount: 0,
-    interest_rate: undefined,
-    emi_amount: undefined,
-    start_date: '',
-    end_date: '',
     notes: '',
 };
 
@@ -56,18 +74,21 @@ export default function LiabilitiesPage() {
     const [formData, setFormData] = useState<LiabilityFormData>(INITIAL_FORM);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [tenureMonths, setTenureMonths] = useState<number | undefined>(undefined);
+    const [saving, setSaving] = useState(false);
     const { addToast } = useToast();
 
     useEffect(() => {
         loadLiabilities();
     }, []);
 
-    const loadLiabilities = () => {
+    const loadLiabilities = async () => {
         try {
-            const data = getLiabilities();
+            setLoading(true);
+            const data = await fetchLiabilities();
             setLiabilities(data);
         } catch (error) {
             console.error('Error loading liabilities:', error);
+            addToast('Failed to load liabilities', 'error');
         } finally {
             setLoading(false);
         }
@@ -77,15 +98,13 @@ export default function LiabilitiesPage() {
         if (liability) {
             setEditingLiability(liability);
             setFormData({
-                category: liability.category,
+                type: liability.type,
                 name: liability.name,
+                principal: liability.principal,
+                currentBalance: liability.currentBalance,
+                interestRate: liability.interestRate,
+                emi: liability.emi || 0,
                 institution: liability.institution || '',
-                principal_amount: liability.principal_amount,
-                outstanding_amount: liability.outstanding_amount,
-                interest_rate: liability.interest_rate || undefined,
-                emi_amount: liability.emi_amount || undefined,
-                start_date: liability.start_date || '',
-                end_date: liability.end_date || '',
                 notes: liability.notes || '',
             });
         } else {
@@ -108,42 +127,43 @@ export default function LiabilitiesPage() {
         const { name, value, type } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'number' ? (value ? parseFloat(value) : undefined) : value,
+            [name]: type === 'number' ? (value ? parseFloat(value) : 0) : value,
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.name || formData.principal_amount <= 0 || formData.outstanding_amount < 0) {
+        if (!formData.name || formData.principal <= 0 || formData.currentBalance < 0) {
             addToast('Please fill in all required fields', 'warning');
             return;
         }
 
         try {
+            setSaving(true);
             if (editingLiability) {
-                updateLiability(editingLiability.id, formData);
+                await updateLiabilityAPI(editingLiability._id, { ...formData });
                 addToast(`Liability "${formData.name}" updated successfully`, 'success');
             } else {
-                createLiability(formData);
+                await createLiabilityAPI(formData);
                 addToast(`Liability "${formData.name}" added successfully`, 'success');
             }
-            loadLiabilities();
+            await loadLiabilities();
             handleCloseModal();
-            window.dispatchEvent(new Event('storage'));
         } catch (error) {
             console.error('Error saving liability:', error);
             addToast('Failed to save liability', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleDelete = (id: string) => {
-        const liabilityToDelete = liabilities.find(l => l.id === id);
+    const handleDelete = async (id: string) => {
+        const liabilityToDelete = liabilities.find(l => l._id === id);
         try {
-            deleteLiability(id);
-            loadLiabilities();
+            await deleteLiabilityAPI(id);
+            await loadLiabilities();
             setDeleteConfirm(null);
-            window.dispatchEvent(new Event('storage'));
             addToast(`Liability "${liabilityToDelete?.name}" deleted`, 'success');
         } catch (error) {
             console.error('Error deleting liability:', error);
@@ -151,8 +171,13 @@ export default function LiabilitiesPage() {
         }
     };
 
-    const totalOutstanding = liabilities.reduce((sum, l) => sum + l.outstanding_amount, 0);
-    const totalEMI = liabilities.reduce((sum, l) => sum + (l.emi_amount || 0), 0);
+    const totalOutstanding = liabilities.reduce((sum, l) => sum + l.currentBalance, 0);
+    const totalEMI = liabilities.reduce((sum, l) => sum + (l.emi || 0), 0);
+
+    const getCategoryLabel = (type: string) => {
+        const cat = LIABILITY_CATEGORIES.find(c => c.value === type);
+        return cat?.label || type;
+    };
 
     if (loading) {
         return (
@@ -223,7 +248,7 @@ export default function LiabilitiesPage() {
                         </thead>
                         <tbody>
                             {liabilities.map(liability => (
-                                <tr key={liability.id}>
+                                <tr key={liability._id}>
                                     <td className={styles.nameCell}>
                                         <span className={styles.assetName}>{liability.name}</span>
                                         {liability.notes && (
@@ -235,20 +260,20 @@ export default function LiabilitiesPage() {
                                             background: 'var(--color-accent-red-muted)',
                                             color: 'var(--color-accent-red)'
                                         }}>
-                                            {LIABILITY_CATEGORY_LABELS[liability.category]}
+                                            {getCategoryLabel(liability.type)}
                                         </span>
                                     </td>
                                     <td className={styles.institutionCell}>
                                         {liability.institution || '-'}
                                     </td>
                                     <td className={styles.valueCell} style={{ color: 'var(--color-accent-red)' }}>
-                                        {formatCurrency(liability.outstanding_amount)}
+                                        {formatCurrency(liability.currentBalance)}
                                     </td>
                                     <td>
-                                        {liability.emi_amount ? formatCurrency(liability.emi_amount) : '-'}
+                                        {liability.emi ? formatCurrency(liability.emi) : '-'}
                                     </td>
                                     <td>
-                                        {liability.interest_rate ? `${liability.interest_rate}%` : '-'}
+                                        {liability.interestRate ? `${liability.interestRate}%` : '-'}
                                     </td>
                                     <td className={styles.actionsCell}>
                                         <button
@@ -257,11 +282,11 @@ export default function LiabilitiesPage() {
                                         >
                                             Edit
                                         </button>
-                                        {deleteConfirm === liability.id ? (
+                                        {deleteConfirm === liability._id ? (
                                             <>
                                                 <button
                                                     className="btn btn-danger btn-sm"
-                                                    onClick={() => handleDelete(liability.id)}
+                                                    onClick={() => handleDelete(liability._id)}
                                                 >
                                                     Confirm
                                                 </button>
@@ -275,7 +300,7 @@ export default function LiabilitiesPage() {
                                         ) : (
                                             <button
                                                 className="btn btn-ghost btn-sm"
-                                                onClick={() => setDeleteConfirm(liability.id)}
+                                                onClick={() => setDeleteConfirm(liability._id)}
                                             >
                                                 Delete
                                             </button>
@@ -300,8 +325,8 @@ export default function LiabilitiesPage() {
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Category *</label>
                             <select
-                                name="category"
-                                value={formData.category}
+                                name="type"
+                                value={formData.type}
                                 onChange={handleInputChange}
                                 className="select"
                                 required
@@ -343,8 +368,8 @@ export default function LiabilitiesPage() {
                             <label className={styles.label}>Principal Amount (₹) *</label>
                             <input
                                 type="number"
-                                name="principal_amount"
-                                value={formData.principal_amount || ''}
+                                name="principal"
+                                value={formData.principal || ''}
                                 onChange={handleInputChange}
                                 className="input"
                                 placeholder="0"
@@ -358,8 +383,8 @@ export default function LiabilitiesPage() {
                             <label className={styles.label}>Outstanding Amount (₹) *</label>
                             <input
                                 type="number"
-                                name="outstanding_amount"
-                                value={formData.outstanding_amount || ''}
+                                name="currentBalance"
+                                value={formData.currentBalance || ''}
                                 onChange={handleInputChange}
                                 className="input"
                                 placeholder="0"
@@ -373,8 +398,8 @@ export default function LiabilitiesPage() {
                             <label className={styles.label}>Interest Rate (% per annum)</label>
                             <input
                                 type="number"
-                                name="interest_rate"
-                                value={formData.interest_rate || ''}
+                                name="interestRate"
+                                value={formData.interestRate || ''}
                                 onChange={handleInputChange}
                                 className="input"
                                 placeholder="e.g., 8.5"
@@ -402,8 +427,8 @@ export default function LiabilitiesPage() {
                             <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
                                 <input
                                     type="number"
-                                    name="emi_amount"
-                                    value={formData.emi_amount || ''}
+                                    name="emi"
+                                    value={formData.emi || ''}
                                     onChange={handleInputChange}
                                     className="input"
                                     placeholder="0"
@@ -411,17 +436,17 @@ export default function LiabilitiesPage() {
                                     step="1"
                                     style={{ flex: 1 }}
                                 />
-                                {formData.outstanding_amount && formData.interest_rate && tenureMonths && (
+                                {formData.currentBalance && formData.interestRate && tenureMonths && (
                                     <button
                                         type="button"
                                         className="btn btn-secondary btn-sm"
                                         onClick={() => {
                                             const calculatedEMI = calculateEMI(
-                                                formData.outstanding_amount,
-                                                formData.interest_rate!,
+                                                formData.currentBalance,
+                                                formData.interestRate,
                                                 tenureMonths
                                             );
-                                            setFormData(prev => ({ ...prev, emi_amount: calculatedEMI }));
+                                            setFormData(prev => ({ ...prev, emi: calculatedEMI }));
                                             addToast(`EMI calculated: ${formatCurrency(calculatedEMI)}`, 'success');
                                         }}
                                         style={{ whiteSpace: 'nowrap' }}
@@ -430,38 +455,16 @@ export default function LiabilitiesPage() {
                                     </button>
                                 )}
                             </div>
-                            {formData.outstanding_amount && formData.interest_rate && tenureMonths && (
+                            {formData.currentBalance && formData.interestRate && tenureMonths && (
                                 <div style={{
                                     marginTop: 'var(--spacing-xs)',
                                     fontSize: 'var(--font-size-xs)',
                                     color: 'var(--color-text-muted)'
                                 }}>
-                                    Suggested EMI: {formatCurrency(calculateEMI(formData.outstanding_amount, formData.interest_rate, tenureMonths))}
-                                    {' · '}Total Interest: {formatCurrency((calculateEMI(formData.outstanding_amount, formData.interest_rate, tenureMonths) * tenureMonths) - formData.outstanding_amount)}
+                                    Suggested EMI: {formatCurrency(calculateEMI(formData.currentBalance, formData.interestRate, tenureMonths))}
+                                    {' · '}Total Interest: {formatCurrency((calculateEMI(formData.currentBalance, formData.interestRate, tenureMonths) * tenureMonths) - formData.currentBalance)}
                                 </div>
                             )}
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Start Date</label>
-                            <input
-                                type="date"
-                                name="start_date"
-                                value={formData.start_date}
-                                onChange={handleInputChange}
-                                className="input"
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>End Date</label>
-                            <input
-                                type="date"
-                                name="end_date"
-                                value={formData.end_date}
-                                onChange={handleInputChange}
-                                className="input"
-                            />
                         </div>
                     </div>
 
@@ -481,8 +484,8 @@ export default function LiabilitiesPage() {
                         <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary">
-                            {editingLiability ? 'Save Changes' : 'Add Liability'}
+                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                            {saving ? 'Saving...' : (editingLiability ? 'Save Changes' : 'Add Liability')}
                         </button>
                     </div>
                 </form>

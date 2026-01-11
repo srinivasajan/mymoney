@@ -1,0 +1,393 @@
+/* Track Record Page Styles */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 3rem 4rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #ffffff;
+    min-height: 100vh;
+}
+
+.header {
+    margin-bottom: 3rem;
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+    transition: color 0.2s;
+}
+
+.backLink:hover {
+    color: #1a365d;
+}
+
+.headerContent {
+    text-align: center;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: rgba(184, 134, 11, 0.1);
+    border: 1px solid rgba(184, 134, 11, 0.3);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #b8860b;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 1.125rem;
+    color: #6b7280;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Metrics Grid */
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.metricCard {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.metricCard:hover {
+    border-color: #1a365d;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.metricValue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f766e;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 0.25rem;
+}
+
+.metricLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.metricPeriod {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 3rem;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: #f3f4f6;
+    padding: 0.25rem;
+    border-radius: 8px;
+}
+
+.tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.tabActive {
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Table */
+.tableContainer {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table td {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr:hover {
+    background: #fafafa;
+}
+
+.positive {
+    color: #0f766e;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.negative {
+    color: #dc2626;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Risk Grid */
+.riskGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.riskCard {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.riskValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a365d;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 0.25rem;
+}
+
+.riskLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.riskDesc {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* Holdings Grid */
+.holdingsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.holdingCard {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.holdingCard:hover {
+    background: #f9fafb;
+}
+
+.holdingRank {
+    width: 28px;
+    height: 28px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.holdingInfo {
+    flex: 1;
+}
+
+.holdingName {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.875rem;
+}
+
+.holdingSector {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.holdingAllocation {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a365d;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Disclaimer */
+.disclaimer {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.disclaimer h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 0.5rem;
+}
+
+.disclaimer p {
+    font-size: 0.8rem;
+    color: #78350f;
+    line-height: 1.6;
+}
+
+.disclaimer strong {
+    font-weight: 600;
+}
+
+/* CTA Section */
+.ctaSection {
+    text-align: center;
+    padding: 3rem;
+    background: linear-gradient(135deg, #1a365d 0%, #2c4a7c 100%);
+    border-radius: 16px;
+    color: #ffffff;
+}
+
+.ctaSection h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.ctaSection p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 1.5rem;
+}
+
+.ctaButton {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #b8860b, #d4a853);
+    border-radius: 8px;
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.ctaButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(184, 134, 11, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .metricsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .riskGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+    }
+
+    .title {
+        font-size: 1.75rem;
+    }
+
+    .metricsGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .riskGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+    }
+}

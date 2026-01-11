@@ -5,36 +5,49 @@ import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import styles from './page.module.css';
 import {
-    getAssets,
-    createAsset,
-    updateAsset,
-    deleteAsset
-} from '@/lib/storage';
+    fetchAssets,
+    createAssetAPI,
+    updateAssetAPI,
+    deleteAssetAPI
+} from '@/lib/api';
 import {
     formatCurrency,
-    formatDate,
-    ASSET_CATEGORY_LABELS
+    formatDate
 } from '@/lib/utils';
-import type { Asset, AssetCategory, AssetFormData } from '@/lib/types';
 
-const ASSET_CATEGORIES: { value: AssetCategory; label: string }[] = [
+interface Asset {
+    _id: string;
+    name: string;
+    type: string;
+    value: number;
+    institution?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface AssetFormData {
+    name: string;
+    type: string;
+    value: number;
+    institution: string;
+    notes: string;
+}
+
+const ASSET_CATEGORIES: { value: string; label: string }[] = [
     { value: 'cash', label: 'Cash' },
-    { value: 'bank_account', label: 'Bank Account' },
-    { value: 'fixed_deposit', label: 'Fixed Deposit' },
-    { value: 'gold', label: 'Gold' },
+    { value: 'savings', label: 'Savings Account' },
+    { value: 'investment', label: 'Investment' },
     { value: 'property', label: 'Property' },
+    { value: 'vehicle', label: 'Vehicle' },
     { value: 'other', label: 'Other' },
 ];
 
 const INITIAL_FORM: AssetFormData = {
-    category: 'bank_account',
+    type: 'savings',
     name: '',
+    value: 0,
     institution: '',
-    current_value: 0,
-    purchase_value: undefined,
-    purchase_date: '',
-    maturity_date: '',
-    interest_rate: undefined,
     notes: '',
 };
 
@@ -45,18 +58,21 @@ export default function AssetsPage() {
     const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
     const [formData, setFormData] = useState<AssetFormData>(INITIAL_FORM);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
     const { addToast } = useToast();
 
     useEffect(() => {
         loadAssets();
     }, []);
 
-    const loadAssets = () => {
+    const loadAssets = async () => {
         try {
-            const data = getAssets();
+            setLoading(true);
+            const data = await fetchAssets();
             setAssets(data);
         } catch (error) {
             console.error('Error loading assets:', error);
+            addToast('Failed to load assets', 'error');
         } finally {
             setLoading(false);
         }
@@ -66,14 +82,10 @@ export default function AssetsPage() {
         if (asset) {
             setEditingAsset(asset);
             setFormData({
-                category: asset.category,
+                type: asset.type,
                 name: asset.name,
+                value: asset.value,
                 institution: asset.institution || '',
-                current_value: asset.current_value,
-                purchase_value: asset.purchase_value || undefined,
-                purchase_date: asset.purchase_date || '',
-                maturity_date: asset.maturity_date || '',
-                interest_rate: asset.interest_rate || undefined,
                 notes: asset.notes || '',
             });
         } else {
@@ -95,44 +107,43 @@ export default function AssetsPage() {
         const { name, value, type } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'number' ? (value ? parseFloat(value) : undefined) : value,
+            [name]: type === 'number' ? (value ? parseFloat(value) : 0) : value,
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.name || formData.current_value <= 0) {
+        if (!formData.name || formData.value <= 0) {
             addToast('Please fill in all required fields', 'warning');
             return;
         }
 
         try {
+            setSaving(true);
             if (editingAsset) {
-                updateAsset(editingAsset.id, formData);
+                await updateAssetAPI(editingAsset._id, { ...formData });
                 addToast(`Asset "${formData.name}" updated successfully`, 'success');
             } else {
-                createAsset(formData);
+                await createAssetAPI(formData);
                 addToast(`Asset "${formData.name}" added successfully`, 'success');
             }
-            loadAssets();
+            await loadAssets();
             handleCloseModal();
-
-            // Trigger storage event for header update
-            window.dispatchEvent(new Event('storage'));
         } catch (error) {
             console.error('Error saving asset:', error);
             addToast('Failed to save asset', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleDelete = (id: string) => {
-        const assetToDelete = assets.find(a => a.id === id);
+    const handleDelete = async (id: string) => {
+        const assetToDelete = assets.find(a => a._id === id);
         try {
-            deleteAsset(id);
-            loadAssets();
+            await deleteAssetAPI(id);
+            await loadAssets();
             setDeleteConfirm(null);
-            window.dispatchEvent(new Event('storage'));
             addToast(`Asset "${assetToDelete?.name}" deleted`, 'success');
         } catch (error) {
             console.error('Error deleting asset:', error);
@@ -140,7 +151,12 @@ export default function AssetsPage() {
         }
     };
 
-    const totalValue = assets.reduce((sum, a) => sum + a.current_value, 0);
+    const totalValue = assets.reduce((sum, a) => sum + a.value, 0);
+
+    const getCategoryLabel = (type: string) => {
+        const cat = ASSET_CATEGORIES.find(c => c.value === type);
+        return cat?.label || type;
+    };
 
     if (loading) {
         return (
@@ -194,14 +210,13 @@ export default function AssetsPage() {
                                 <th>Category</th>
                                 <th>Institution</th>
                                 <th>Value</th>
-                                <th>Interest Rate</th>
                                 <th>Updated</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {assets.map(asset => (
-                                <tr key={asset.id}>
+                                <tr key={asset._id}>
                                     <td className={styles.nameCell}>
                                         <span className={styles.assetName}>{asset.name}</span>
                                         {asset.notes && (
@@ -210,20 +225,17 @@ export default function AssetsPage() {
                                     </td>
                                     <td>
                                         <span className={styles.categoryBadge}>
-                                            {ASSET_CATEGORY_LABELS[asset.category]}
+                                            {getCategoryLabel(asset.type)}
                                         </span>
                                     </td>
                                     <td className={styles.institutionCell}>
                                         {asset.institution || '-'}
                                     </td>
                                     <td className={styles.valueCell}>
-                                        {formatCurrency(asset.current_value)}
-                                    </td>
-                                    <td>
-                                        {asset.interest_rate ? `${asset.interest_rate}%` : '-'}
+                                        {formatCurrency(asset.value)}
                                     </td>
                                     <td className={styles.dateCell}>
-                                        {formatDate(asset.updated_at, 'short')}
+                                        {formatDate(asset.updatedAt, 'short')}
                                     </td>
                                     <td className={styles.actionsCell}>
                                         <button
@@ -232,11 +244,11 @@ export default function AssetsPage() {
                                         >
                                             Edit
                                         </button>
-                                        {deleteConfirm === asset.id ? (
+                                        {deleteConfirm === asset._id ? (
                                             <>
                                                 <button
                                                     className="btn btn-danger btn-sm"
-                                                    onClick={() => handleDelete(asset.id)}
+                                                    onClick={() => handleDelete(asset._id)}
                                                 >
                                                     Confirm
                                                 </button>
@@ -250,7 +262,7 @@ export default function AssetsPage() {
                                         ) : (
                                             <button
                                                 className="btn btn-ghost btn-sm"
-                                                onClick={() => setDeleteConfirm(asset.id)}
+                                                onClick={() => setDeleteConfirm(asset._id)}
                                             >
                                                 Delete
                                             </button>
@@ -275,8 +287,8 @@ export default function AssetsPage() {
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Category *</label>
                             <select
-                                name="category"
-                                value={formData.category}
+                                name="type"
+                                value={formData.type}
                                 onChange={handleInputChange}
                                 className="select"
                                 required
@@ -318,65 +330,14 @@ export default function AssetsPage() {
                             <label className={styles.label}>Current Value (₹) *</label>
                             <input
                                 type="number"
-                                name="current_value"
-                                value={formData.current_value || ''}
+                                name="value"
+                                value={formData.value || ''}
                                 onChange={handleInputChange}
                                 className="input"
                                 placeholder="0"
                                 min="0"
                                 step="0.01"
                                 required
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Purchase Value (₹)</label>
-                            <input
-                                type="number"
-                                name="purchase_value"
-                                value={formData.purchase_value || ''}
-                                onChange={handleInputChange}
-                                className="input"
-                                placeholder="0"
-                                min="0"
-                                step="0.01"
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Interest Rate (%)</label>
-                            <input
-                                type="number"
-                                name="interest_rate"
-                                value={formData.interest_rate || ''}
-                                onChange={handleInputChange}
-                                className="input"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Purchase Date</label>
-                            <input
-                                type="date"
-                                name="purchase_date"
-                                value={formData.purchase_date}
-                                onChange={handleInputChange}
-                                className="input"
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Maturity Date</label>
-                            <input
-                                type="date"
-                                name="maturity_date"
-                                value={formData.maturity_date}
-                                onChange={handleInputChange}
-                                className="input"
                             />
                         </div>
                     </div>
@@ -397,8 +358,8 @@ export default function AssetsPage() {
                         <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary">
-                            {editingAsset ? 'Save Changes' : 'Add Asset'}
+                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                            {saving ? 'Saving...' : (editingAsset ? 'Save Changes' : 'Add Asset')}
                         </button>
                     </div>
                 </form>

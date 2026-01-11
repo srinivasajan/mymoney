@@ -1,8 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
+
+interface WaitlistEntry {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    investmentRange: string;
+    createdAt: string;
+}
 
 // Animated counter hook
 function useCountUp(end: number, duration: number = 2000, prefix: string = '', suffix: string = '') {
@@ -36,6 +45,40 @@ export default function LandingPage() {
     const cagr = useCountUp(18, 1500, '', '%');
     const years = useCountUp(8, 1000, '', '+');
 
+    // Waitlist form state
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        investmentRange: ''
+    });
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        // Create waitlist entry
+        const entry: WaitlistEntry = {
+            id: `waitlist_${Date.now()}`,
+            ...formData,
+            createdAt: new Date().toISOString()
+        };
+
+        // Save to localStorage
+        const existing = JSON.parse(localStorage.getItem('moonlight_waitlist') || '[]');
+        existing.push(entry);
+        localStorage.setItem('moonlight_waitlist', JSON.stringify(existing));
+
+        // Show success
+        setTimeout(() => {
+            setIsSubmitting(false);
+            setIsSubmitted(true);
+            setFormData({ name: '', email: '', phone: '', investmentRange: '' });
+        }, 1000);
+    };
+
     return (
         <div className={styles.page}>
             {/* Navigation */}
@@ -49,10 +92,9 @@ export default function LandingPage() {
 
                     <div className={styles.navLinks}>
                         <Link href="#about" className={styles.navLink}>About Us</Link>
-                        <Link href="#performance" className={styles.navLink}>Performance</Link>
+                        <Link href="/track-record" className={styles.navLink}>Track Record</Link>
                         <Link href="#strategies" className={styles.navLink}>Investment Strategies</Link>
-                        <Link href="#team" className={styles.navLink}>Leadership</Link>
-                        <Link href="#contact" className={styles.navLink}>Contact</Link>
+                        <Link href="#contact" className={styles.navLink}>Join Waitlist</Link>
                     </div>
 
                     <div className={styles.navActions}>
@@ -75,7 +117,7 @@ export default function LandingPage() {
                     <div className={styles.heroText}>
                         <div className={styles.heroBadge}>
                             <span className={styles.badgeDot}></span>
-                            SEBI Registered Investment Advisor
+                            NOW ACCEPTING EARLY INVESTORS
                         </div>
                         <h1 className={styles.heroTitle}>
                             Building Wealth.<br />
@@ -84,11 +126,11 @@ export default function LandingPage() {
                         <p className={styles.heroSubtitle}>
                             We are a premier investment management firm specializing in
                             multi-asset strategies across equities, fixed income, and alternative investments.
-                            Trust your capital with institutional-grade expertise.
+                            Be among the first to invest with institutional-grade expertise.
                         </p>
                         <div className={styles.heroActions}>
                             <Link href="#contact" className={styles.primaryButton}>
-                                Start Investing
+                                Join Waitlist
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                     <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
@@ -432,38 +474,72 @@ export default function LandingPage() {
             <section id="contact" className={styles.ctaSection}>
                 <div className={styles.ctaContainer}>
                     <div className={styles.ctaContent}>
-                        <h2 className={styles.ctaTitle}>Ready to Grow Your Wealth?</h2>
+                        <h2 className={styles.ctaTitle}>Join Our Investor Waitlist</h2>
                         <p className={styles.ctaSubtitle}>
-                            Schedule a consultation with our investment advisors to discuss
-                            your financial goals and explore our investment solutions.
+                            Be among the first to invest with Moonlight Capital.
+                            We're currently onboarding select investors for our upcoming fund launch.
                         </p>
-                        <div className={styles.ctaForm}>
-                            <input
-                                type="text"
-                                placeholder="Your Name"
-                                className={styles.ctaInput}
-                            />
-                            <input
-                                type="email"
-                                placeholder="Email Address"
-                                className={styles.ctaInput}
-                            />
-                            <input
-                                type="tel"
-                                placeholder="Phone Number"
-                                className={styles.ctaInput}
-                            />
-                            <select className={styles.ctaSelect}>
-                                <option>Monthly Investment</option>
-                                <option>₹1,000 - ₹5,000</option>
-                                <option>₹5,000 - ₹15,000</option>
-                                <option>₹15,000 - ₹50,000</option>
-                                <option>₹50,000+</option>
-                            </select>
-                            <button className={styles.ctaButton}>
-                                Request Consultation
-                            </button>
-                        </div>
+
+                        {isSubmitted ? (
+                            <div className={styles.successMessage}>
+                                <div className={styles.successIcon}>✓</div>
+                                <h3>Thank You for Your Interest!</h3>
+                                <p>We've received your application and will contact you within 24-48 hours to discuss investment opportunities.</p>
+                                <button
+                                    className={styles.secondaryButton}
+                                    onClick={() => setIsSubmitted(false)}
+                                >
+                                    Submit Another
+                                </button>
+                            </div>
+                        ) : (
+                            <form className={styles.ctaForm} onSubmit={handleSubmit}>
+                                <input
+                                    type="text"
+                                    placeholder="Your Name"
+                                    className={styles.ctaInput}
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="email"
+                                    placeholder="Email Address"
+                                    className={styles.ctaInput}
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    type="tel"
+                                    placeholder="Phone Number"
+                                    className={styles.ctaInput}
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    required
+                                />
+                                <select
+                                    className={styles.ctaSelect}
+                                    value={formData.investmentRange}
+                                    onChange={(e) => setFormData({ ...formData, investmentRange: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Expected Investment Amount</option>
+                                    <option value="1-5L">₹1 Lakh - ₹5 Lakhs</option>
+                                    <option value="5-10L">₹5 Lakhs - ₹10 Lakhs</option>
+                                    <option value="10-25L">₹10 Lakhs - ₹25 Lakhs</option>
+                                    <option value="25-50L">₹25 Lakhs - ₹50 Lakhs</option>
+                                    <option value="50L+">₹50 Lakhs+</option>
+                                </select>
+                                <button
+                                    className={styles.ctaButton}
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Join Waitlist'}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </section>

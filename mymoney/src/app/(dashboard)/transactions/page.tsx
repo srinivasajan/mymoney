@@ -6,23 +6,41 @@ import { useToast } from '@/components/ui/Toast';
 import AllocationChart from '@/components/charts/AllocationChart';
 import styles from './page.module.css';
 import {
-    getTransactions,
-    createTransaction,
-    updateTransaction,
-    deleteTransaction,
-    getMonthlyTransactionSummary,
-} from '@/lib/storage';
+    fetchTransactions,
+    createTransactionAPI,
+    updateTransactionAPI,
+    deleteTransactionAPI,
+} from '@/lib/api';
 import { formatCurrency, formatDate, TRANSACTION_CATEGORY_LABELS, CHART_COLORS } from '@/lib/utils';
-import type { Transaction, TransactionFormData, TransactionType, TransactionCategory } from '@/lib/types';
 
 type TabType = 'all' | 'income' | 'expense';
 type ModalType = 'add' | 'edit' | null;
 
-const INCOME_CATEGORIES: TransactionCategory[] = [
+interface Transaction {
+    _id: string;
+    type: 'income' | 'expense' | 'transfer';
+    category: string;
+    amount: number;
+    description: string;
+    date: string;
+    account?: string;
+    tags?: string[];
+}
+
+interface TransactionFormData {
+    type: 'income' | 'expense';
+    category: string;
+    amount: number;
+    description: string;
+    date: string;
+    account?: string;
+}
+
+const INCOME_CATEGORIES = [
     'salary', 'business', 'investment_income', 'rental', 'freelance', 'bonus', 'gift_received', 'refund', 'other_income'
 ];
 
-const EXPENSE_CATEGORIES: TransactionCategory[] = [
+const EXPENSE_CATEGORIES = [
     'food', 'groceries', 'transportation', 'utilities', 'rent', 'entertainment', 'shopping',
     'healthcare', 'education', 'travel', 'insurance', 'emi', 'subscriptions', 'personal_care',
     'household', 'gifts', 'charity', 'investment', 'other_expense'
@@ -39,17 +57,11 @@ export default function TransactionsPage() {
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [saving, setSaving] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     });
-    const [monthlySummary, setMonthlySummary] = useState<{
-        income: number;
-        expense: number;
-        net: number;
-        transactionCount: number;
-        categoryBreakdown: Record<string, number>;
-    } | null>(null);
 
     const { addToast } = useToast();
 
@@ -60,21 +72,20 @@ export default function TransactionsPage() {
         amount: 0,
         description: '',
         date: new Date().toISOString().split('T')[0],
-        payment_method: 'UPI',
+        account: 'UPI',
     });
 
-    const loadTransactions = useCallback(() => {
+    const loadTransactions = useCallback(async () => {
         setLoading(true);
         try {
-            const data = getTransactions();
-            // Sort by date descending
-            data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setTransactions(data);
-
-            // Load monthly summary for selected month
             const [year, month] = selectedMonth.split('-').map(Number);
-            const summary = getMonthlyTransactionSummary(year, month - 1);
-            setMonthlySummary(summary);
+            const startDate = new Date(year, month - 1, 1).toISOString();
+            const endDate = new Date(year, month, 0).toISOString();
+
+            const data = await fetchTransactions({ startDate, endDate, limit: 200 });
+            // Sort by date descending
+            data.sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setTransactions(data);
         } catch (error) {
             console.error('Error loading transactions:', error);
             addToast('Failed to load transactions', 'error');
@@ -87,14 +98,26 @@ export default function TransactionsPage() {
         loadTransactions();
     }, [loadTransactions]);
 
-    const handleOpenAdd = (type: TransactionType = 'expense') => {
+    // Calculate monthly summary from loaded transactions
+    const monthlySummary = {
+        income: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+        expense: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
+        get net() { return this.income - this.expense; },
+        transactionCount: transactions.length,
+        categoryBreakdown: transactions.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {} as Record<string, number>),
+    };
+
+    const handleOpenAdd = (type: 'income' | 'expense' = 'expense') => {
         setFormData({
             type,
             category: type === 'income' ? 'salary' : 'food',
             amount: 0,
             description: '',
             date: new Date().toISOString().split('T')[0],
-            payment_method: 'UPI',
+            account: 'UPI',
         });
         setEditingTransaction(null);
         setModalType('add');
@@ -102,19 +125,18 @@ export default function TransactionsPage() {
 
     const handleOpenEdit = (transaction: Transaction) => {
         setFormData({
-            type: transaction.type,
+            type: transaction.type as 'income' | 'expense',
             category: transaction.category,
             amount: transaction.amount,
             description: transaction.description,
-            date: transaction.date,
-            payment_method: transaction.payment_method || 'Other',
-            notes: transaction.notes || undefined,
+            date: transaction.date.split('T')[0],
+            account: transaction.account || 'Other',
         });
         setEditingTransaction(transaction);
         setModalType('edit');
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (formData.amount <= 0) {
@@ -128,28 +150,31 @@ export default function TransactionsPage() {
         }
 
         try {
+            setSaving(true);
             if (modalType === 'edit' && editingTransaction) {
-                updateTransaction(editingTransaction.id, formData);
+                await updateTransactionAPI(editingTransaction._id, { ...formData });
                 addToast('Transaction updated successfully', 'success');
             } else {
-                createTransaction(formData);
+                await createTransactionAPI(formData);
                 addToast('Transaction added successfully', 'success');
             }
             setModalType(null);
-            loadTransactions();
+            await loadTransactions();
         } catch (error) {
             console.error('Error saving transaction:', error);
             addToast('Failed to save transaction', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this transaction?')) return;
 
         try {
-            deleteTransaction(id);
+            await deleteTransactionAPI(id);
             addToast('Transaction deleted', 'success');
-            loadTransactions();
+            await loadTransactions();
         } catch (error) {
             console.error('Error deleting transaction:', error);
             addToast('Failed to delete transaction', 'error');
@@ -166,7 +191,7 @@ export default function TransactionsPage() {
             const query = searchQuery.toLowerCase();
             return (
                 t.description.toLowerCase().includes(query) ||
-                TRANSACTION_CATEGORY_LABELS[t.category]?.toLowerCase().includes(query)
+                (TRANSACTION_CATEGORY_LABELS[t.category] || t.category)?.toLowerCase().includes(query)
             );
         }
 
@@ -174,7 +199,7 @@ export default function TransactionsPage() {
     });
 
     // Category breakdown for chart
-    const categoryChartData = monthlySummary ? Object.entries(monthlySummary.categoryBreakdown)
+    const categoryChartData = Object.entries(monthlySummary.categoryBreakdown)
         .filter(([, value]) => value > 0)
         .map(([category, value], index) => ({
             name: TRANSACTION_CATEGORY_LABELS[category] || category,
@@ -182,7 +207,7 @@ export default function TransactionsPage() {
             color: CHART_COLORS.primary[index % CHART_COLORS.primary.length],
         }))
         .sort((a, b) => b.value - a.value)
-        .slice(0, 8) : [];
+        .slice(0, 8);
 
     const categories = formData.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -228,7 +253,7 @@ export default function TransactionsPage() {
                     <div className={styles.summaryInfo}>
                         <span className={styles.summaryLabel}>Income</span>
                         <span className={styles.summaryValue} style={{ color: '#22c55e' }}>
-                            {formatCurrency(monthlySummary?.income || 0)}
+                            {formatCurrency(monthlySummary.income)}
                         </span>
                     </div>
                 </div>
@@ -239,23 +264,23 @@ export default function TransactionsPage() {
                     <div className={styles.summaryInfo}>
                         <span className={styles.summaryLabel}>Expense</span>
                         <span className={styles.summaryValue} style={{ color: '#ef4444' }}>
-                            {formatCurrency(monthlySummary?.expense || 0)}
+                            {formatCurrency(monthlySummary.expense)}
                         </span>
                     </div>
                 </div>
                 <div className={styles.summaryCard}>
                     <div className={styles.summaryIcon} style={{
-                        backgroundColor: (monthlySummary?.net || 0) >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: (monthlySummary?.net || 0) >= 0 ? '#22c55e' : '#ef4444'
+                        backgroundColor: monthlySummary.net >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        color: monthlySummary.net >= 0 ? '#22c55e' : '#ef4444'
                     }}>
-                        {(monthlySummary?.net || 0) >= 0 ? '↗' : '↘'}
+                        {monthlySummary.net >= 0 ? '↗' : '↘'}
                     </div>
                     <div className={styles.summaryInfo}>
                         <span className={styles.summaryLabel}>Net Savings</span>
                         <span className={styles.summaryValue} style={{
-                            color: (monthlySummary?.net || 0) >= 0 ? '#22c55e' : '#ef4444'
+                            color: monthlySummary.net >= 0 ? '#22c55e' : '#ef4444'
                         }}>
-                            {formatCurrency(monthlySummary?.net || 0)}
+                            {formatCurrency(monthlySummary.net)}
                         </span>
                     </div>
                 </div>
@@ -266,7 +291,7 @@ export default function TransactionsPage() {
                     <div className={styles.summaryInfo}>
                         <span className={styles.summaryLabel}>Transactions</span>
                         <span className={styles.summaryValue}>
-                            {monthlySummary?.transactionCount || 0}
+                            {monthlySummary.transactionCount}
                         </span>
                     </div>
                 </div>
@@ -317,7 +342,7 @@ export default function TransactionsPage() {
                             </div>
                         ) : (
                             filteredTransactions.map(transaction => (
-                                <div key={transaction.id} className={styles.transactionItem}>
+                                <div key={transaction._id} className={styles.transactionItem}>
                                     <div className={styles.transactionLeft}>
                                         <div className={`${styles.transactionIcon} ${transaction.type === 'income' ? styles.income : styles.expense}`}>
                                             {transaction.type === 'income' ? '↑' : '↓'}
@@ -325,8 +350,8 @@ export default function TransactionsPage() {
                                         <div className={styles.transactionInfo}>
                                             <span className={styles.transactionDesc}>{transaction.description}</span>
                                             <span className={styles.transactionMeta}>
-                                                {TRANSACTION_CATEGORY_LABELS[transaction.category]} • {formatDate(transaction.date, 'short')}
-                                                {transaction.payment_method && ` • ${transaction.payment_method}`}
+                                                {TRANSACTION_CATEGORY_LABELS[transaction.category] || transaction.category} • {formatDate(transaction.date, 'short')}
+                                                {transaction.account && ` • ${transaction.account}`}
                                             </span>
                                         </div>
                                     </div>
@@ -338,7 +363,7 @@ export default function TransactionsPage() {
                                             <button onClick={() => handleOpenEdit(transaction)} className={styles.editBtn}>
                                                 ✏️
                                             </button>
-                                            <button onClick={() => handleDelete(transaction.id)} className={styles.deleteBtn}>
+                                            <button onClick={() => handleDelete(transaction._id)} className={styles.deleteBtn}>
                                                 🗑️
                                             </button>
                                         </div>
@@ -414,12 +439,12 @@ export default function TransactionsPage() {
                             <label>Category *</label>
                             <select
                                 value={formData.category}
-                                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as TransactionCategory }))}
+                                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                                 required
                             >
                                 {categories.map(cat => (
                                     <option key={cat} value={cat}>
-                                        {TRANSACTION_CATEGORY_LABELS[cat]}
+                                        {TRANSACTION_CATEGORY_LABELS[cat] || cat}
                                     </option>
                                 ))}
                             </select>
@@ -439,8 +464,8 @@ export default function TransactionsPage() {
                     <div className={styles.formGroup}>
                         <label>Payment Method</label>
                         <select
-                            value={formData.payment_method || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
+                            value={formData.account || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, account: e.target.value }))}
                         >
                             <option value="">Select method</option>
                             {PAYMENT_METHODS.map(method => (
@@ -449,22 +474,12 @@ export default function TransactionsPage() {
                         </select>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Notes</label>
-                        <textarea
-                            value={formData.notes || ''}
-                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                            placeholder="Additional notes (optional)"
-                            rows={2}
-                        />
-                    </div>
-
                     <div className={styles.formActions}>
                         <button type="button" onClick={() => setModalType(null)} className={styles.cancelButton}>
                             Cancel
                         </button>
-                        <button type="submit" className={styles.submitButton}>
-                            {modalType === 'edit' ? 'Update' : 'Add'} Transaction
+                        <button type="submit" className={styles.submitButton} disabled={saving}>
+                            {saving ? 'Saving...' : (modalType === 'edit' ? 'Update' : 'Add')} Transaction
                         </button>
                     </div>
                 </form>

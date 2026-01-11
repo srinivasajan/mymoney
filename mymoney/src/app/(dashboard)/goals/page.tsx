@@ -4,11 +4,31 @@ import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import styles from './page.module.css';
-import { getGoals, createGoal, updateGoal, deleteGoal } from '@/lib/storage';
-import { formatCurrency, formatDate, GOAL_CATEGORY_LABELS } from '@/lib/utils';
-import type { Goal, GoalCategory, GoalPriority, GoalFormData } from '@/lib/types';
+import { fetchGoals, createGoalAPI, updateGoalAPI, deleteGoalAPI } from '@/lib/api';
+import { formatCurrency } from '@/lib/utils';
 
-const GOAL_CATEGORIES: { value: GoalCategory; label: string; icon: string }[] = [
+interface Goal {
+    _id: string;
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    targetDate: string;
+    category: string;
+    priority: 'low' | 'medium' | 'high';
+    status: string;
+    notes?: string;
+}
+
+interface GoalFormData {
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    targetDate: string;
+    priority: 'low' | 'medium' | 'high';
+    category: string;
+}
+
+const GOAL_CATEGORIES: { value: string; label: string; icon: string }[] = [
     { value: 'retirement', label: 'Retirement', icon: '👴' },
     { value: 'education', label: 'Education', icon: '🎓' },
     { value: 'house', label: 'House', icon: '🏠' },
@@ -18,7 +38,7 @@ const GOAL_CATEGORIES: { value: GoalCategory; label: string; icon: string }[] = 
     { value: 'other', label: 'Other', icon: '🎯' },
 ];
 
-const PRIORITIES: { value: GoalPriority; label: string; color: string }[] = [
+const PRIORITIES: { value: 'low' | 'medium' | 'high'; label: string; color: string }[] = [
     { value: 'high', label: 'High', color: 'var(--color-accent-red)' },
     { value: 'medium', label: 'Medium', color: 'var(--color-warning)' },
     { value: 'low', label: 'Low', color: 'var(--color-accent-blue)' },
@@ -26,9 +46,9 @@ const PRIORITIES: { value: GoalPriority; label: string; color: string }[] = [
 
 const INITIAL_FORM: GoalFormData = {
     name: '',
-    target_amount: 0,
-    current_amount: 0,
-    target_date: '',
+    targetAmount: 0,
+    currentAmount: 0,
+    targetDate: '',
     priority: 'medium',
     category: 'other',
 };
@@ -40,18 +60,21 @@ export default function GoalsPage() {
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
     const [formData, setFormData] = useState<GoalFormData>(INITIAL_FORM);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
     const { addToast } = useToast();
 
     useEffect(() => {
         loadGoals();
     }, []);
 
-    const loadGoals = () => {
+    const loadGoals = async () => {
         try {
-            const data = getGoals();
+            setLoading(true);
+            const data = await fetchGoals();
             setGoals(data);
         } catch (error) {
             console.error('Error loading goals:', error);
+            addToast('Failed to load goals', 'error');
         } finally {
             setLoading(false);
         }
@@ -62,9 +85,9 @@ export default function GoalsPage() {
             setEditingGoal(goal);
             setFormData({
                 name: goal.name,
-                target_amount: goal.target_amount,
-                current_amount: goal.current_amount,
-                target_date: goal.target_date || '',
+                targetAmount: goal.targetAmount,
+                currentAmount: goal.currentAmount,
+                targetDate: goal.targetDate ? goal.targetDate.split('T')[0] : '',
                 priority: goal.priority || 'medium',
                 category: goal.category || 'other',
             });
@@ -91,35 +114,38 @@ export default function GoalsPage() {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.name || formData.target_amount <= 0) {
+        if (!formData.name || formData.targetAmount <= 0) {
             addToast('Please fill in all required fields', 'warning');
             return;
         }
 
         try {
+            setSaving(true);
             if (editingGoal) {
-                updateGoal(editingGoal.id, formData);
+                await updateGoalAPI(editingGoal._id, { ...formData });
                 addToast(`Goal "${formData.name}" updated successfully`, 'success');
             } else {
-                createGoal(formData);
+                await createGoalAPI(formData);
                 addToast(`Goal "${formData.name}" added successfully`, 'success');
             }
-            loadGoals();
+            await loadGoals();
             handleCloseModal();
         } catch (error) {
             console.error('Error saving goal:', error);
             addToast('Failed to save goal', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleDelete = (id: string) => {
-        const goalToDelete = goals.find(g => g.id === id);
+    const handleDelete = async (id: string) => {
+        const goalToDelete = goals.find(g => g._id === id);
         try {
-            deleteGoal(id);
-            loadGoals();
+            await deleteGoalAPI(id);
+            await loadGoals();
             setDeleteConfirm(null);
             addToast(`Goal "${goalToDelete?.name}" deleted`, 'success');
         } catch (error) {
@@ -129,7 +155,7 @@ export default function GoalsPage() {
     };
 
     const getProgress = (goal: Goal) => {
-        return Math.min((goal.current_amount / goal.target_amount) * 100, 100);
+        return Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
     };
 
     const getDaysRemaining = (targetDate: string | null) => {
@@ -142,28 +168,32 @@ export default function GoalsPage() {
     };
 
     const getMonthlyContribution = (goal: Goal) => {
-        if (!goal.target_date) return null;
-        const remaining = goal.target_amount - goal.current_amount;
+        if (!goal.targetDate) return null;
+        const remaining = goal.targetAmount - goal.currentAmount;
         if (remaining <= 0) return 0;
 
-        const daysLeft = getDaysRemaining(goal.target_date);
-        if (!daysLeft || daysLeft <= 0) return remaining; // Need it all now!
+        const daysLeft = getDaysRemaining(goal.targetDate);
+        if (!daysLeft || daysLeft <= 0) return remaining;
 
         const monthsLeft = Math.ceil(daysLeft / 30);
         return Math.ceil(remaining / monthsLeft);
     };
 
-    const getCategoryIcon = (category: GoalCategory | null) => {
+    const getCategoryIcon = (category: string | null) => {
         return GOAL_CATEGORIES.find(c => c.value === category)?.icon || '🎯';
     };
 
-    const getPriorityColor = (priority: GoalPriority | null) => {
+    const getCategoryLabel = (category: string | null) => {
+        return GOAL_CATEGORIES.find(c => c.value === category)?.label || 'Other';
+    };
+
+    const getPriorityColor = (priority: string | null) => {
         return PRIORITIES.find(p => p.value === priority)?.color || 'var(--color-text-muted)';
     };
 
     // Summary calculations
-    const totalTargetAmount = goals.reduce((sum, g) => sum + g.target_amount, 0);
-    const totalCurrentAmount = goals.reduce((sum, g) => sum + g.current_amount, 0);
+    const totalTargetAmount = goals.reduce((sum, g) => sum + g.targetAmount, 0);
+    const totalCurrentAmount = goals.reduce((sum, g) => sum + g.currentAmount, 0);
     const overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) * 100 : 0;
 
     if (loading) {
@@ -221,10 +251,10 @@ export default function GoalsPage() {
                 <div className={styles.goalsGrid}>
                     {goals.map(goal => {
                         const progress = getProgress(goal);
-                        const daysRemaining = getDaysRemaining(goal.target_date);
+                        const daysRemaining = getDaysRemaining(goal.targetDate);
 
                         return (
-                            <div key={goal.id} className={styles.goalCard}>
+                            <div key={goal._id} className={styles.goalCard}>
                                 <div className={styles.goalHeader}>
                                     <div className={styles.goalIcon}>
                                         {getCategoryIcon(goal.category)}
@@ -232,7 +262,7 @@ export default function GoalsPage() {
                                     <div className={styles.goalInfo}>
                                         <h3 className={styles.goalName}>{goal.name}</h3>
                                         <span className={styles.goalCategory}>
-                                            {GOAL_CATEGORY_LABELS[goal.category || 'other']}
+                                            {getCategoryLabel(goal.category)}
                                         </span>
                                     </div>
                                     <span
@@ -245,8 +275,8 @@ export default function GoalsPage() {
 
                                 <div className={styles.goalProgress}>
                                     <div className={styles.progressHeader}>
-                                        <span>{formatCurrency(goal.current_amount)}</span>
-                                        <span className={styles.targetAmount}>of {formatCurrency(goal.target_amount)}</span>
+                                        <span>{formatCurrency(goal.currentAmount)}</span>
+                                        <span className={styles.targetAmount}>of {formatCurrency(goal.targetAmount)}</span>
                                     </div>
                                     <div className={styles.progressBar}>
                                         <div
@@ -306,9 +336,9 @@ export default function GoalsPage() {
                                     <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(goal)}>
                                         Edit
                                     </button>
-                                    {deleteConfirm === goal.id ? (
+                                    {deleteConfirm === goal._id ? (
                                         <>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(goal.id)}>
+                                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(goal._id)}>
                                                 Confirm
                                             </button>
                                             <button className="btn btn-ghost btn-sm" onClick={() => setDeleteConfirm(null)}>
@@ -316,7 +346,7 @@ export default function GoalsPage() {
                                             </button>
                                         </>
                                     ) : (
-                                        <button className="btn btn-ghost btn-sm" onClick={() => setDeleteConfirm(goal.id)}>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setDeleteConfirm(goal._id)}>
                                             Delete
                                         </button>
                                     )}
@@ -386,8 +416,8 @@ export default function GoalsPage() {
                             <label className={styles.label}>Target Amount (₹) *</label>
                             <input
                                 type="number"
-                                name="target_amount"
-                                value={formData.target_amount || ''}
+                                name="targetAmount"
+                                value={formData.targetAmount || ''}
                                 onChange={handleInputChange}
                                 className="input"
                                 placeholder="0"
@@ -400,8 +430,8 @@ export default function GoalsPage() {
                             <label className={styles.label}>Current Amount (₹)</label>
                             <input
                                 type="number"
-                                name="current_amount"
-                                value={formData.current_amount || ''}
+                                name="currentAmount"
+                                value={formData.currentAmount || ''}
                                 onChange={handleInputChange}
                                 className="input"
                                 placeholder="0"
@@ -414,8 +444,8 @@ export default function GoalsPage() {
                         <label className={styles.label}>Target Date</label>
                         <input
                             type="date"
-                            name="target_date"
-                            value={formData.target_date}
+                            name="targetDate"
+                            value={formData.targetDate}
                             onChange={handleInputChange}
                             className="input"
                         />
@@ -425,8 +455,8 @@ export default function GoalsPage() {
                         <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary">
-                            {editingGoal ? 'Save Changes' : 'Add Goal'}
+                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                            {saving ? 'Saving...' : (editingGoal ? 'Save Changes' : 'Add Goal')}
                         </button>
                     </div>
                 </form>

@@ -1,0 +1,808 @@
+/* Trading Terminal Styles */
+.container {
+    padding: 1.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.portfolioSummary {
+    display: flex;
+    gap: 2rem;
+}
+
+.summaryItem {
+    text-align: right;
+}
+
+.summaryLabel {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.summaryValue {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.positive {
+    color: #0f766e !important;
+}
+
+.negative {
+    color: #dc2626 !important;
+}
+
+/* Main Grid */
+.mainGrid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 1.5rem;
+}
+
+/* Chart Section */
+.chartSection {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+}
+
+/* Search */
+.searchContainer {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #1a365d;
+}
+
+.searchResults {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.searchResult {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.searchResult:hover {
+    background: #f9fafb;
+}
+
+.resultSymbol {
+    font-weight: 600;
+    color: #1a365d;
+}
+
+.resultName {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* Quick Stocks */
+.quickStocks {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.quickStock {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quickStock:hover {
+    border-color: #1a365d;
+    color: #1a365d;
+}
+
+.quickStock.active {
+    background: #1a365d;
+    border-color: #1a365d;
+    color: #ffffff;
+}
+
+/* Stock Header */
+.stockHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stockNameRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stockName {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0;
+}
+
+.watchlistBtn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.watchlistBtn:hover {
+    border-color: #d4a853;
+    color: #d4a853;
+}
+
+.watchlistBtn.inWatchlist {
+    color: #d4a853;
+    background: #fef9e7;
+    border-color: #d4a853;
+}
+
+.stockSymbol {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* AI Score Badge */
+.scoreBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.scoreValue {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.875rem;
+}
+
+.scoreSignal {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.signalSTRONGBUY {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+}
+
+.signalBUY {
+    background: #d1fae5;
+    color: #0f766e;
+}
+
+.signalHOLD {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.signalSELL {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.signalSTRONGSELL {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+}
+
+.priceInfo {
+    text-align: right;
+}
+
+.currentPrice {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.priceChange {
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Timeframes */
+.timeframes {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.timeframe {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.timeframe:hover {
+    background: #e5e7eb;
+}
+
+.timeframe.active {
+    background: #1a365d;
+    color: #ffffff;
+}
+
+/* Chart */
+.chart {
+    height: 280px;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.chartBars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 100%;
+    padding: 0 40px 0 0;
+}
+
+.chartBar {
+    flex: 1;
+    min-width: 4px;
+    border-radius: 2px 2px 0 0;
+    transition: all 0.2s;
+    cursor: crosshair;
+}
+
+.chartBar.up {
+    background: linear-gradient(to top, rgba(15, 118, 110, 0.3), rgba(15, 118, 110, 0.8));
+}
+
+.chartBar.down {
+    background: linear-gradient(to top, rgba(220, 38, 38, 0.3), rgba(220, 38, 38, 0.6));
+}
+
+.chartBar:hover {
+    opacity: 0.8;
+}
+
+.chartLabels {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.loading {
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+}
+
+/* Stock Stats */
+.stockStats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.stat {
+    text-align: center;
+}
+
+.statLabel {
+    display: block;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-bottom: 0.25rem;
+}
+
+.statValue {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #111827;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Right Panel */
+.rightPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Order Panel */
+.orderPanel {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+}
+
+.panelTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 1rem;
+}
+
+.orderTypeToggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.orderTypeBtn {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #ffffff;
+    color: #6b7280;
+}
+
+.buyActive {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #ffffff;
+}
+
+.sellActive {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.currentPosition {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+/* Quantity Input */
+.inputGroup {
+    margin-bottom: 1rem;
+}
+
+.inputGroup label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.quantityInput {
+    display: flex;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.quantityInput button {
+    width: 44px;
+    border: none;
+    background: #f3f4f6;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.quantityInput button:hover {
+    background: #e5e7eb;
+}
+
+.quantityInput input {
+    flex: 1;
+    border: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem;
+}
+
+.quantityInput input:focus {
+    outline: none;
+}
+
+.quickQuantity {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quickQuantity button {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quickQuantity button:hover {
+    border-color: #1a365d;
+    color: #1a365d;
+}
+
+/* Order Summary */
+.orderSummary {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+    color: #6b7280;
+}
+
+.summaryRow.total {
+    font-weight: 600;
+    color: #111827;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    font-size: 1rem;
+}
+
+.orderMessage {
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.orderMessage.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.orderMessage.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Execute Button */
+.executeBtn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.buyBtn {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    color: #ffffff;
+}
+
+.sellBtn {
+    background: linear-gradient(135deg, #dc2626, #f87171);
+    color: #ffffff;
+}
+
+.executeBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.executeBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.warning {
+    font-size: 0.75rem;
+    color: #dc2626;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* Portfolio Panel */
+.portfolioPanel {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tab {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab.active {
+    background: #1a365d;
+    color: #ffffff;
+}
+
+.positionsList,
+.tradesList {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+}
+
+.hint {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+/* Position Card */
+.positionCard {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.positionCard:hover {
+    border-color: #1a365d;
+}
+
+.positionCard.selected {
+    border-color: #1a365d;
+    background: #f0f4f8;
+}
+
+.positionHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.positionSymbol {
+    font-weight: 600;
+    color: #111827;
+}
+
+.positionPnl {
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.875rem;
+}
+
+.positionDetails {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Trade Card */
+.tradeCard {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.tradeHeader {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.tradeType {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+}
+
+.tradeType.buy {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.tradeType.sell {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.tradeSymbol {
+    font-weight: 600;
+    color: #111827;
+}
+
+.tradeDetails {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Reset Button */
+.resetBtn {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 0.8rem;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.resetBtn:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .mainGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .rightPanel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .stockStats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .portfolioSummary {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .rightPanel {
+        grid-template-columns: 1fr;
+    }
+
+    .stockStats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
